@@ -1,0 +1,281 @@
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/jensonhirst/Orion/main/source')))()
+
+local Window = OrionLib:MakeWindow({Name = "Title of the library", HidePremium = false, SaveConfig = true, ConfigFolder = "OrionTest"})
+
+local Tab = Window:MakeTab({
+	Name = "Auto Farm",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
+
+local Section = Tab:AddSection({
+	Name = "your body "
+})
+
+ Tab:AddSlider({
+	Name = "WalkSpeed",
+	Min = 16, -- valor padrão do Roblox
+	Max = 200, -- você pode aumentar se quiser
+	Default = 16,
+	Color = Color3.fromRGB(0, 200, 255),
+	Increment = 1,
+	ValueName = "Speed",
+	Callback = function(Value)
+		local player = game.Players.LocalPlayer
+		local character = player.Character or player.CharacterAdded:Wait()
+		local humanoid = character:WaitForChild("Humanoid")
+		humanoid.WalkSpeed = Value
+	end    
+})
+
+Section:AddSlider({
+	Name = "JumpPower",
+	Min = 50,
+	Max = 500,
+	Default = 50,
+	Color = Color3.fromRGB(255, 100, 0),
+	Increment = 1,
+	ValueName = "Power",
+	Callback = function(Value)
+		local player = game.Players.LocalPlayer
+		local character = player.Character or player.CharacterAdded:Wait()
+		local humanoid = character:WaitForChild("Humanoid")
+		humanoid.JumpPower = Value
+	end    
+})
+
+local Section = Tab:AddSection({
+	Name = "Auto farm"
+})
+
+local autoTP = false
+
+Tab:AddToggle({
+	Name = "Auto Farm",
+	Default = false,
+	Callback = function(Value)
+		autoTP = Value
+	end    
+})
+
+-- Loop de teleporte
+spawn(function()
+	while true do
+		if autoTP then
+			local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				hrp.CFrame = CFrame.new(155, 233.5, -263.5)
+			end
+		end
+		wait(0.1)
+	end
+end)
+
+local autoAntiKill = false -- Variável para controlar o toggle
+
+Tab:AddToggle({
+	Name = "Anti Kill Total", -- Nome do toggle na GUI
+	Default = false,          -- Começa desligado
+	Callback = function(Value)
+		autoAntiKill = Value -- Atualiza a variável quando ativado/desativado
+	end    
+})
+
+-- Função anti-kill total
+local function antiKillTotal()
+	local player = game.Players.LocalPlayer
+	local character = player.Character
+	if not character then return end
+
+	local humanoid = character:FindFirstChild("Humanoid")
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if not humanoid or not hrp then return end
+
+	-- Bloqueia dano
+	humanoid.HealthChanged:Connect(function()
+		if humanoid.Health < humanoid.MaxHealth then
+			humanoid.Health = humanoid.MaxHealth
+		end
+	end)
+
+	-- Evita reset de humanoid
+	character.ChildAdded:Connect(function(child)
+		if child:IsA("Humanoid") then
+			child.Health = child.MaxHealth
+		end
+	end)
+
+	-- Evita void/fall kill
+	game:GetService("RunService").Stepped:Connect(function()
+		if hrp.Position.Y < -1000 then
+			hrp.CFrame = CFrame.new(0, 50, 0)
+		end
+	end)
+end
+
+-- Loop para ativar/desativar
+spawn(function()
+	while true do
+		if autoAntiKill then
+			local player = game.Players.LocalPlayer
+			if player.Character then
+				antiKillTotal()
+			end
+		end
+		wait(0.5)
+	end
+end)
+
+local antiLagEnabled = false
+
+Tab:AddToggle({
+	Name = "Enable Anti-Lag",
+	Default = false,
+	Callback = function(Value)
+		antiLagEnabled = Value
+
+		if antiLagEnabled then
+			local Workspace = game:GetService("Workspace")
+			local Lighting = game:GetService("Lighting")
+			local Players = game:GetService("Players")
+
+			-- Desativa sombras e efeitos
+			Lighting.GlobalShadows = false
+			Lighting.FogEnd = 100000
+			Lighting.Brightness = 2
+			Lighting.OutdoorAmbient = Color3.fromRGB(128,128,128)
+
+			-- Remove partículas, explosões, decals e meshes pesadas
+			for _, obj in pairs(Workspace:GetDescendants()) do
+				if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Explosion") then
+					obj.Enabled = false
+				elseif obj:IsA("Decal") or obj:IsA("Texture") then
+					obj.Transparency = 1
+				elseif obj:IsA("MeshPart") then
+					obj.Material = Enum.Material.Plastic
+				elseif obj:IsA("Part") or obj:IsA("UnionOperation") or obj:IsA("MeshPart") then
+					obj.Material = Enum.Material.Plastic
+					obj.Reflectance = 0
+				end
+			end
+
+			-- Desativa sons distantes
+			for _, sound in pairs(Workspace:GetDescendants()) do
+				if sound:IsA("Sound") then
+					sound.Volume = 0
+				end
+			end
+
+			-- Limita FPS para 30~60 se quiser (evita travamento)
+			pcall(function()
+				setfpscap(60) -- dependendo do executor
+			end)
+		else
+			-- Para desligar anti-lag, é mais seguro reiniciar o jogo
+			print("Anti-Lag desligado, algumas otimizações podem permanecer. Para reset completo, reinicie.")
+		end
+	end
+})
+
+local antiRagdollEnabled = false
+
+Tab:AddToggle({
+	Name = "Enable Anti-Ragdoll",
+	Default = false,
+	Callback = function(Value)
+		antiRagdollEnabled = Value
+	end
+})
+
+-- Loop para manter humanoid estável
+spawn(function()
+	while true do
+		if antiRagdollEnabled then
+			local player = game.Players.LocalPlayer
+			local character = player.Character
+			if character then
+				local humanoid = character:FindFirstChild("Humanoid")
+				if humanoid then
+					-- Bloqueia estado ragdoll
+					humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+					humanoid.PlatformStand = false
+				end
+			end
+		end
+		wait(0.1)
+	end
+end)
+
+local Tab = Window:MakeTab({
+	Name = "config",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
+
+Tab:AddParagraph("Owner: ","Davigemes300617")
+
+-- Paragraph só para o nome do player
+local playerParagraph = Tab:AddParagraph("Player", "Carregando...")
+
+-- Paragraph para mostrar a data de criação
+local joinParagraph = Tab:AddParagraph("Data de Entrada", "Calculando...")
+
+local player = game.Players.LocalPlayer
+if player then
+	local days = player.AccountAge -- número de dias desde a criação
+	local joinDate = os.date("%d/%m/%Y", os.time() - (days * 24 * 60 * 60))
+	joinParagraph:Set("Data de Entrada: "..joinDate)
+end
+
+-- Paragraph para quantidade de players
+local playersParagraph = Tab:AddParagraph("Players no Servidor", "Calculando...")
+
+-- Atualiza a cada 0.5s
+spawn(function()
+	while true do
+		local count = #game.Players:GetPlayers()
+		playersParagraph:Set("Players no Servidor: "..count)
+		wait(0.5)
+	end
+end)
+
+-- Atualiza o nome do player local
+local player = game.Players.LocalPlayer
+if player then
+	playerParagraph:Set("Player: "..player.Name)
+end
+
+-- Cria o paragraph
+local executorParagraph = Tab:AddParagraph("Executor", "Detectando...")
+
+-- Pega o executor
+local executorName = "Desconhecido"
+
+if syn then
+    executorName = "Synapse X"
+elseif KRNL_LOADED then
+    executorName = "Krnl"
+elseif SecureLoad then
+    executorName = "Sentinel"
+elseif getexecutorname then
+    executorName = getexecutorname()
+elseif identifyexecutor then
+    executorName = identifyexecutor()
+end
+
+-- Atualiza o paragraph
+executorParagraph:Set("Executor: "..executorName)
+
+-- Paragraph só para ping
+local pingParagraph = Tab:AddParagraph("Ping", "Calculando...")
+
+-- Atualiza ping a cada 0.5s
+spawn(function()
+	while true do
+		local ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
+		pingParagraph:Set("Ping: "..math.floor(ping).." ms")
+		wait(0.5)
+	end
+end)
+
+OrionLib:init()
