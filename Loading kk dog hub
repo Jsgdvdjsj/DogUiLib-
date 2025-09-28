@@ -1,0 +1,132 @@
+--// Dog Hub Loading Screen com cachorro em cima
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+
+--// GUI Principal
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "DogHubLoader"
+ScreenGui.Parent = PlayerGui
+
+--// Fundo totalmente preto
+local Background = Instance.new("Frame")
+Background.Size = UDim2.new(1,0,1,0)
+Background.Position = UDim2.new(0,0,0,0)
+Background.BackgroundColor3 = Color3.fromRGB(0,0,0)
+Background.BorderSizePixel = 0
+Background.Parent = ScreenGui
+
+--// Imagem do cachorro (colocada acima do título)
+local DogImage = Instance.new("ImageLabel")
+DogImage.Size = UDim2.new(0, 100, 0, 100) -- tamanho da imagem
+DogImage.Position = UDim2.new(0.5, -50, 0, 10) -- centralizado horizontalmente
+DogImage.BackgroundTransparency = 1
+DogImage.Image = "rbxassetid://11184326454" -- <- coloque o asset ID da imagem do cachorro aqui
+DogImage.Parent = Background
+
+--// Título
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 50)
+Title.Position = UDim2.new(0, 0, 0, 120) -- abaixo da imagem
+Title.BackgroundTransparency = 1
+Title.Text = "Dog Hub"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextScaled = true
+Title.Font = Enum.Font.FredokaOne
+Title.Parent = Background
+
+--// Barra de Loading (fundo)
+local LoadingBarBG = Instance.new("Frame")
+LoadingBarBG.Size = UDim2.new(0.8, 0, 0, 30)
+LoadingBarBG.Position = UDim2.new(0.1, 0, 0.85, 0)
+LoadingBarBG.BackgroundColor3 = Color3.fromRGB(20,20,20)
+LoadingBarBG.BorderSizePixel = 0
+LoadingBarBG.Parent = Background
+
+--// Texto "Loading" em cima da barra
+local LoadingText = Instance.new("TextLabel")
+LoadingText.Size = UDim2.new(1, 0, 1, 0)
+LoadingText.Position = UDim2.new(0,0,0,0)
+LoadingText.BackgroundTransparency = 1
+LoadingText.Text = "Loading..."
+LoadingText.TextColor3 = Color3.fromRGB(255,255,255)
+LoadingText.TextScaled = true
+LoadingText.Font = Enum.Font.FredokaOne
+LoadingText.Parent = LoadingBarBG
+
+--// Barra de preenchimento
+local LoadingBarFill = Instance.new("Frame")
+LoadingBarFill.Size = UDim2.new(0, 0, 1, 0)
+LoadingBarFill.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+LoadingBarFill.BorderSizePixel = 0
+LoadingBarFill.Parent = LoadingBarBG
+
+--// Função para criar blocos descendo
+local function createFallingBlock()
+    local Block = Instance.new("Frame")
+    Block.Size = UDim2.new(0, math.random(30, 60), 0, math.random(30, 60))
+    Block.Position = UDim2.new(math.random(), 0, -0.2, 0)
+    Block.BackgroundColor3 = Color3.fromRGB(math.random(50,255), math.random(50,255), math.random(50,255))
+    Block.BorderSizePixel = 0
+    Block.Parent = Background
+
+    local Outline = Instance.new("UICorner")
+    Outline.CornerRadius = UDim.new(0.15, 0)
+    Outline.Parent = Block
+
+    local Border = Instance.new("UIStroke")
+    Border.Color = Color3.fromRGB(255,0,0)
+    Border.Thickness = 2
+    Border.Parent = Block
+
+    local goal = {Position = UDim2.new(Block.Position.X.Scale, 0, 1.2, 0)}
+    local tweenInfo = TweenInfo.new(math.random(3, 5), Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+    local tween = TweenService:Create(Block, tweenInfo, goal)
+    tween:Play()
+    tween.Completed:Connect(function()
+        Block:Destroy()
+    end)
+end
+
+--// Spawn contínuo de blocos
+task.spawn(function()
+    for i = 1, 100 do
+        createFallingBlock()
+        task.wait(0.05)
+    end
+end)
+
+--// Barra de Loading com execução de script ao final
+task.spawn(function()
+    for i = 1, 100 do
+        LoadingBarFill.Size = UDim2.new(i/100, 0, 1, 0)
+        task.wait(0.05)
+    end
+
+-- fecha gui
+ScreenGui:Destroy() 
+
+-- Travar a câmera e controles do jogador
+local Player = game.Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+
+-- Congela movimentos
+Humanoid.WalkSpeed = 0
+Humanoid.JumpPower = 0
+
+-- Timer de 3 segundos
+local start = tick()
+while tick() - start < 3 do
+    task.wait()
+end
+
+-- Volta ao normal
+Humanoid.WalkSpeed = 16 -- valor padrão
+Humanoid.JumpPower = 50 -- valor padrão
+
+-- Executa o script
+pcall(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Jsgdvdjsj/DogUiLib-/main/And%20dog%20hub%20evade"))()
+end)
